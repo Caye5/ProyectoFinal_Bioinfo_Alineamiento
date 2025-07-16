@@ -105,40 +105,75 @@ Este script automatiza todo el flujo de alineamiento y post-procesamiento:
 ```bash
 #!/bin/bash
 
-# Colores para mensajes
-GREEN="\e[32m"
-RESET="\e[0m"
+# Script de alineamiento y post-procesamiento
+# Autoras: Cayetana Reátegui y Daniela Guillén
 
-echo -e "${GREEN}==> Iniciando alineamiento y post-procesamiento...${RESET}"
+# ================================================
+# BIENVENIDA PERSONALIZADA
+# ================================================
+echo "Bienvenido/a al proyecto de alineamiento automatizado."
+read -p "Por favor, ingresa tu nombre: " nombre
+echo "Hola, $nombre. Iniciando el análisis..."
 
-# Crear carpeta de resultados
-mkdir -p resultados
+# ================================================
+# CREACIÓN DE DIRECTORIOS
+# ================================================
+mkdir -p ProyectoFinal_CayeDani
+cd ProyectoFinal_CayeDani
+mkdir resultados
+mkdir datos
 
-# Paso 1: Alineamiento
-echo -e "${GREEN}==> Ejecutando BWA MEM...${RESET}"
-bwa mem ecoli_ref.fa ecoli_reads.fastq.gz > resultados/aligned_reads.sam
+# ================================================
+# DESCARGA DEL GENOMA DE REFERENCIA
+# ================================================
+echo "Descargando genoma de referencia (Escherichia coli)..."
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.fna.gz -O datos/ecoli_ref.fa.gz
+gunzip datos/ecoli_ref.fa.gz
 
-# Paso 2: Conversión SAM a BAM
-echo -e "${GREEN}==> Convirtiendo SAM a BAM...${RESET}"
+# ================================================
+# DESCARGA DE LECTURAS
+# ================================================
+echo "Descargando lecturas FASTQ (SRR2584861)..."
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR258/001/SRR2584861/SRR2584861_1.fastq.gz -O datos/ecoli_reads.fastq.gz
+
+# ================================================
+# INDEXACIÓN DEL GENOMA
+# ================================================
+echo "Indexando el genoma..."
+bwa index datos/ecoli_ref.fa
+
+# ================================================
+# ALINEAMIENTO
+# ================================================
+echo "Alineando lecturas contra el genoma..."
+bwa mem datos/ecoli_ref.fa datos/ecoli_reads.fastq.gz > resultados/aligned_reads.sam
+
+# ================================================
+# POST-PROCESAMIENTO
+# ================================================
+echo "Convirtiendo SAM a BAM..."
 samtools view -S -b resultados/aligned_reads.sam > resultados/aligned_reads.bam
 
-# Paso 3: Ordenar BAM
-echo -e "${GREEN}==> Ordenando archivo BAM...${RESET}"
+echo "Ordenando archivo BAM..."
 samtools sort resultados/aligned_reads.bam -o resultados/aligned_reads_sorted.bam
 
-# Paso 4: Indexar BAM ordenado
-echo -e "${GREEN}==> Indexando archivo BAM ordenado...${RESET}"
+echo "Indexando archivo BAM ordenado..."
 samtools index resultados/aligned_reads_sorted.bam
 
-# Paso 5: Eliminar duplicados
-echo -e "${GREEN}==> Eliminando duplicados con samtools markdup...${RESET}"
+echo "Eliminando duplicados..."
 samtools markdup -r resultados/aligned_reads_sorted.bam resultados/aligned_reads_nodup.bam
 
-# Paso 6: Generar resumen del alineamiento
-echo -e "${GREEN}==> Generando resumen con samtools flagstat...${RESET}"
+# ================================================
+# RESUMEN DEL ALINEAMIENTO
+# ================================================
+echo "Generando resumen del alineamiento..."
 samtools flagstat resultados/aligned_reads_nodup.bam > resumen_alineamiento.txt
 
-echo -e "${GREEN}==> Proceso completado. Resultados guardados en la carpeta 'resultados'.${RESET}"
+# ================================================
+# MENSAJE FINAL
+# ================================================
+echo "Proceso completado, $nombre. Los resultados se encuentran en la carpeta 'ProyectoFinal_CayeDani/resultados'."
+
 ```
 
 ---
